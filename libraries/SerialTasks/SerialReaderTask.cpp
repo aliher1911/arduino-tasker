@@ -6,6 +6,10 @@ void SerialReaderTask::init(byte *aBuffer, void (*aFunction)(int size)) {
   serialBuffer = aBuffer;
 }
 
+void SerialReaderTask::start(byte id) {
+  TM.addTask(2, SerialInTrigger.trigger(), this);
+}
+
 void SerialReaderTask::doTask(Task *task, byte trigger, unsigned long time) {
   int incoming = Serial.read();
   if (incoming=='\n' || incoming=='\r' || packetSize==80) {
@@ -19,19 +23,11 @@ void SerialReaderTask::doTask(Task *task, byte trigger, unsigned long time) {
 
 SerialReleaseTask ReleaseTask = SerialReleaseTask();
 
-void createSerialResponseTask(Task *task, SerialResponseTask *responseTask) {
-  task->trigger = SerialSemaphor.trigger();
-  task->handler = responseTask;
+void SerialResponseTask::start(byte id, int aValue) {
+  value = aValue;
 }
 
-// replace current task with serial semaphore release
-void setReleaseSerial(Task *task, unsigned short delay) {
-  task->trigger = TIME_TRIGGER;
-  task->handler = &ReleaseTask;
-  task->time = millis() + delay; 
-}
-
-void SerialResponseTask::setResponseCode(int aValue) {
+void SerialResponseTask::start(Task *actionTask, int aValue) {
   value = aValue;
 }
 
@@ -41,7 +37,13 @@ void SerialResponseTask::doTask(Task *task, byte trigger, unsigned long time) {
   Serial.print(task->id);
   Serial.print(' ');
   Serial.println(value);
-  setReleaseSerial(task, 100); // 1 byte/ms on 9600, 64 byte buffer max
+  ReleaseTask.start(task, 100); // 1 byte/ms on 9600, 64 byte buffer max
+}
+
+void SerialReleaseTask::start(Task *task, unsigned short delay) {
+  task->trigger = TIME_TRIGGER;
+  task->time = millis() + delay; 
+  task->handler = this;
 }
 
 void SerialReleaseTask::doTask(Task *task, byte trigger, unsigned long time) {
@@ -49,12 +51,14 @@ void SerialReleaseTask::doTask(Task *task, byte trigger, unsigned long time) {
   SerialSemaphor.release();
 }
 
-void PacketSendTask::init(byte *aBuffer, unsigned short aPacketSize, unsigned short aBufferLength, unsigned long aTimePeriod) {
+void PacketSendTask::start(byte id, byte *aBuffer, unsigned short aPacketSize, 
+                           unsigned short aBufferLength, unsigned long aTimePeriod) {
   ptr = 0;
   buffer = aBuffer;
   packetSize = aPacketSize;
   bufferSize = aBufferLength;
   timeStep = aTimePeriod;
+  TM.addTask(id, SerialSemaphor.trigger(), this);
 }
 
 void PacketSendTask::doTask(Task *task, byte trigger, unsigned long time) {
@@ -74,13 +78,13 @@ void PacketSendTask::doTask(Task *task, byte trigger, unsigned long time) {
   if (ptr==bufferSize) {
     Serial.println();
     // last packet, we need to release serial after timeout
-    setReleaseSerial(task, timeStep);
+    ReleaseTask.start(task, timeStep);
   } else {
     task->time += timeStep;
   }
 }
 
-
+SerialTrigger SerialInTrigger = SerialTrigger();
 SerialReaderTask SerialTask = SerialReaderTask();
 ResourceTrigger SerialSemaphor = ResourceTrigger();
 PacketSendTask PacketTask = PacketSendTask();

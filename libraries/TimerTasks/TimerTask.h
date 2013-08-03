@@ -15,17 +15,19 @@ class PeriodicTask : public TaskHandler {
 
   public:
     void init(void (*callback)(Task* task, byte handle, unsigned short value, boolean last));
-    void start(byte handle, unsigned short startVal, unsigned short endVal, short increment, unsigned long timeStep);
+    void start(byte id, byte handle, unsigned short startVal, unsigned short endVal, 
+               short increment, unsigned long timeStep);
     virtual void doTask(Task *task, byte trigger, unsigned long time);
 };
 
 class TimerTask : public TaskHandler {
   void (*callback)(Task* task, byte handle);
+  
   byte handle;
 
   public:
     void init(void (*callback)(Task* task, byte handle));
-    void start(byte handle);
+    void start(byte id, byte handle, unsigned long invocationDelay);
     virtual void doTask(Task *task, byte trigger, unsigned long time);
 };
 

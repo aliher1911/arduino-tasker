@@ -58,7 +58,7 @@ class TaskManager {
     
     // manage tasks
     Task* addTask(byte id, byte trigger, TaskHandler *handler);
-    Task* addTask(byte id, byte trigger, long invocationDelay, TaskHandler *handler);
+    Task* addTask(byte id, byte trigger, unsigned long invocationDelay, TaskHandler *handler);
     void removeTask(byte id);
     void writeDebugReportSync();
     

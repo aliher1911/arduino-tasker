@@ -38,6 +38,10 @@ void SerialTrigger::init(byte tag) {
   resourceTag = tag;
 }
 
+byte SerialTrigger::trigger() {
+  return resourceTag;
+}
+
 byte SerialTrigger::setTrigger(byte event) {
   if (Serial.available()) {
     event |= resourceTag;
@@ -49,12 +53,14 @@ byte SerialTrigger::updateTrigger(byte event) {
   return event;
 }
 
-void CaptureResource::init(void (*aCallback)(Task *task, byte handle)) {
+void CaptureResource::init(ResourceTrigger *aTrigger, void (*aCallback)(Task *task, byte handle)) {
+  trigger = aTrigger;
   callback = aCallback;
 }
 
-void CaptureResource::start(byte aHandle) {
+void CaptureResource::start(byte id, byte aHandle) {
   handle = aHandle;
+  TM.addTask(id, trigger->trigger(), this);
 }
 
 void CaptureResource::doTask(Task *task, byte trigger, unsigned long time) {

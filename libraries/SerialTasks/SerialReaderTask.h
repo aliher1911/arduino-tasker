@@ -14,6 +14,7 @@ class SerialReaderTask : public TaskHandler {
 
   public:
     void init(byte *buffer, void (*function)(int size));
+    void start(byte id);
     virtual void doTask(Task *task, byte trigger, unsigned long time);
 };
 
@@ -22,17 +23,17 @@ class SerialResponseTask : public TaskHandler {
   int value;
   
   public:
-    void setResponseCode(int value);
+    void start(byte id, int value);
+    void start(Task *actionTask, int value);
     virtual void doTask(Task *task, byte trigger, unsigned long time);
 };
 
 class SerialReleaseTask : public TaskHandler {
 
   public:
+    void start(Task *actionTask, unsigned short delay);
     virtual void doTask(Task *task, byte trigger, unsigned long time);
 };
-
-void createSerialResponseTask(Task *task, int code);
 
 class PacketSendTask : public TaskHandler {
   byte *buffer;
@@ -42,10 +43,11 @@ class PacketSendTask : public TaskHandler {
   unsigned long  timeStep;      // how often to send bytes
 
   public:
-    void init(byte *buffer, unsigned short packetSize, unsigned short bufferLength, unsigned long timePeriod);
+    void start(byte id, byte *buffer, unsigned short packetSize, unsigned short bufferLength, unsigned long timePeriod);
     virtual void doTask(Task *task, byte trigger, unsigned long time);
 };
 
+extern SerialTrigger SerialInTrigger;
 extern SerialReaderTask SerialTask;
 extern ResourceTrigger SerialSemaphor;
 extern PacketSendTask PacketTask;

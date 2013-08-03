@@ -4,13 +4,14 @@ void PeriodicTask::init(void (*aCallback)(Task* task, byte handle, unsigned shor
   callback = aCallback;
 }
 
-void PeriodicTask::start(byte aHandle, unsigned short startVal,
-                      unsigned short anEndVal, short increment, unsigned long aTimeStep) {
+void PeriodicTask::start(byte id, byte aHandle, unsigned short startVal,
+                         unsigned short anEndVal, short increment, unsigned long aTimeStep) {
   handle = aHandle;
   currentVal = startVal;
   endVal = anEndVal;
   incrementStep = increment;
   timeStep = timeStep;
+  TM.addTask(id, TIME_TRIGGER, 0, this);
 }
 
 void PeriodicTask::doTask(Task *task, byte trigger, unsigned long time) {
@@ -38,8 +39,9 @@ void TimerTask::init(void (*aCallback)(Task* task, byte handle)) {
   callback = aCallback;
 }
 
-void TimerTask::start(byte aHandle) {
+void TimerTask::start(byte id, byte aHandle, unsigned long invocationDelay) {
   handle = aHandle;
+  TM.addTask(id, TIME_TRIGGER, invocationDelay, this);
 }
 
 void TimerTask::doTask(Task *task, byte trigger, unsigned long time) {
