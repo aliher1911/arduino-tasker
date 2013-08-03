@@ -20,7 +20,7 @@ void TaskManager::init() {
   }
 }
 
-Task* TaskManager::addTaskInternal(byte id, byte trigger, long firstInvocation, TaskHandler *handler) {
+Task* TaskManager::addTaskInternal(byte id, byte trigger, unsigned long firstInvocation, TaskHandler *handler) {
   int i;
   for(i=0;i<TASK_QUEUE_SIZE;i++) {
     if (!queue[i].id) {
@@ -34,7 +34,7 @@ Task* TaskManager::addTaskInternal(byte id, byte trigger, long firstInvocation, 
   return NULL;
 }
 
-Task* TaskManager::addTask(byte id, byte trigger, long invocationDelay, TaskHandler *handler) {
+Task* TaskManager::addTask(byte id, byte trigger, unsigned long invocationDelay, TaskHandler *handler) {
   return addTaskInternal(id, trigger | TIME_TRIGGER, millis()+invocationDelay, handler);
 }
 

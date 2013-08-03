@@ -1,4 +1,4 @@
-#include <TimerTask.h>
+#include <TimerTasks.h>
 
 void PeriodicTask::init(void (*aCallback)(Task* task, byte handle, unsigned short value, boolean last)) {
   callback = aCallback;

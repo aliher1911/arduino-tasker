@@ -4,6 +4,20 @@
 #include <TaskManager.h>
 #include <Triggers.h>
 
+class SerialTrigger : public Trigger {
+  byte resourceTag;
+ 
+  public:
+    // init trigger and set serial tag
+    void init(byte tag);
+    // get trigger associated with this resource
+    byte trigger();
+    // set trigger at the beginning of loop
+    virtual byte setTrigger(byte event);
+    // update trigger after each task
+    virtual byte updateTrigger(byte event);
+};
+
 class SerialReaderTask : public TaskHandler {
   // buffer for command reading
   byte *serialBuffer;
@@ -49,7 +63,7 @@ class PacketSendTask : public TaskHandler {
 
 extern SerialTrigger SerialInTrigger;
 extern SerialReaderTask SerialTask;
-extern ResourceTrigger SerialSemaphor;
+extern ResourceTrigger SerialOutSemaphore;
 extern PacketSendTask PacketTask;
 
 #endif

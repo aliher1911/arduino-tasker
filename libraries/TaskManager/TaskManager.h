@@ -51,7 +51,7 @@ class TaskManager {
 
     byte getEvents();
     byte updateEvents(byte status);
-    Task* addTaskInternal(byte id, byte trigger, long firstInvocation, TaskHandler *handler);
+    Task* addTaskInternal(byte id, byte trigger, unsigned long firstInvocation, TaskHandler *handler);
 
   public:
     void init();

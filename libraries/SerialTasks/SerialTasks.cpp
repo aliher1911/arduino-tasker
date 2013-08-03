@@ -1,4 +1,4 @@
-#include <SerialReaderTask.h>
+#include <SerialTasks.h>
 
 void SerialReaderTask::init(byte *aBuffer, void (*aFunction)(int size)) {
   packetSize = 0;
@@ -32,7 +32,7 @@ void SerialResponseTask::start(Task *actionTask, int aValue) {
 }
 
 void SerialResponseTask::doTask(Task *task, byte trigger, unsigned long time) {
-  SerialSemaphor.aquire();
+  SerialOutSemaphore.aquire();
   Serial.print("k ");
   Serial.print(task->id);
   Serial.print(' ');
@@ -48,7 +48,7 @@ void SerialReleaseTask::start(Task *task, unsigned short delay) {
 
 void SerialReleaseTask::doTask(Task *task, byte trigger, unsigned long time) {
   task->clear();
-  SerialSemaphor.release();
+  SerialOutSemaphore.release();
 }
 
 void PacketSendTask::start(byte id, byte *aBuffer, unsigned short aPacketSize, 
@@ -58,13 +58,13 @@ void PacketSendTask::start(byte id, byte *aBuffer, unsigned short aPacketSize,
   packetSize = aPacketSize;
   bufferSize = aBufferLength;
   timeStep = aTimePeriod;
-  TM.addTask(id, SerialSemaphor.trigger(), this);
+  TM.addTask(id, SerialOutSemaphore.trigger(), this);
 }
 
 void PacketSendTask::doTask(Task *task, byte trigger, unsigned long time) {
   if (ptr==0) {
     // begin packet
-    SerialSemaphor.aquire();
+    SerialOutSemaphore.aquire();
     task->trigger = TIME_TRIGGER;
     Serial.print("t ");
     Serial.print(task->id);
@@ -84,7 +84,27 @@ void PacketSendTask::doTask(Task *task, byte trigger, unsigned long time) {
   }
 }
 
+void SerialTrigger::init(byte tag) {
+  resourceTag = tag;
+  TM.registerTrigger(this);
+}
+
+byte SerialTrigger::trigger() {
+  return resourceTag;
+}
+
+byte SerialTrigger::setTrigger(byte event) {
+  if (Serial.available()) {
+    event |= resourceTag;
+  }
+  return event;
+}
+
+byte SerialTrigger::updateTrigger(byte event) {
+  return event;
+}
+
 SerialTrigger SerialInTrigger = SerialTrigger();
 SerialReaderTask SerialTask = SerialReaderTask();
-ResourceTrigger SerialSemaphor = ResourceTrigger();
+ResourceTrigger SerialOutSemaphore = ResourceTrigger();
 PacketSendTask PacketTask = PacketSendTask();

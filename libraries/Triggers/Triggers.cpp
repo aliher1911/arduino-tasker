@@ -4,6 +4,7 @@ void ResourceTrigger::init(byte tag) {
   resourceTag  =  tag;
   resourceMask = ~tag;
   status = false;
+  TM.registerTrigger(this);
 }
 
 byte ResourceTrigger::trigger() {
@@ -31,25 +32,6 @@ byte ResourceTrigger::updateTrigger(byte event) {
   } else {
     event &= resourceMask;
   }
-  return event;
-}
-
-void SerialTrigger::init(byte tag) {
-  resourceTag = tag;
-}
-
-byte SerialTrigger::trigger() {
-  return resourceTag;
-}
-
-byte SerialTrigger::setTrigger(byte event) {
-  if (Serial.available()) {
-    event |= resourceTag;
-  }
-  return event;
-}
-
-byte SerialTrigger::updateTrigger(byte event) {
   return event;
 }
 
