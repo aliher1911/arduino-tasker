@@ -12,11 +12,13 @@ class ResourceTrigger : public Trigger {
   public:
     // init trigger and set resource tag
     void init(byte tag);
-    // get trigger associated with this resource
-    byte trigger();
     // update trigger status
     void aquire();
     void release();
+    // is trigger on
+    virtual boolean isOn();
+    // get trigger associated with this resource
+    virtual byte trigger();
     // set trigger at the beginning of loop
     virtual byte setTrigger(byte event);
     // update trigger after each task

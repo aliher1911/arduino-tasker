@@ -11,6 +11,9 @@
 
 class Trigger {
   public:
+    // this trigger is used for debugging log
+    virtual boolean isOn() = 0;
+    virtual byte trigger() = 0;    
     // set trigger at the beginning of loop
     virtual byte setTrigger(byte event) = 0;
     // update trigger after each task

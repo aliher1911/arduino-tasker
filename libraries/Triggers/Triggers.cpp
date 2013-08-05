@@ -7,6 +7,10 @@ void ResourceTrigger::init(byte tag) {
   TM.registerTrigger(this);
 }
 
+boolean ResourceTrigger::isOn() {
+  return !status;
+}
+
 byte ResourceTrigger::trigger() {
   return resourceTag;
 }

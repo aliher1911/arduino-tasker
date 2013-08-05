@@ -28,6 +28,7 @@ class TimerTask : public TaskHandler {
   public:
     void init(void (*callback)(Task* task, byte handle));
     void start(byte id, byte handle, unsigned long invocationDelay);
+    void start(Task *task, byte handle, unsigned long invocationDelay);
     virtual void doTask(Task *task, byte trigger, unsigned long time);
 };
 

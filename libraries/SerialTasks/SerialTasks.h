@@ -10,8 +10,10 @@ class SerialTrigger : public Trigger {
   public:
     // init trigger and set serial tag
     void init(byte tag);
+    // get trigger status
+    virtual boolean isOn();
     // get trigger associated with this resource
-    byte trigger();
+    virtual byte trigger();
     // set trigger at the beginning of loop
     virtual byte setTrigger(byte event);
     // update trigger after each task

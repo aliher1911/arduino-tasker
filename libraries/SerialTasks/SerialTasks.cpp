@@ -7,7 +7,7 @@ void SerialReaderTask::init(byte *aBuffer, void (*aFunction)(int size)) {
 }
 
 void SerialReaderTask::start(byte id) {
-  TM.addTask(2, SerialInTrigger.trigger(), this);
+  TM.addTask(id, SerialInTrigger.trigger(), this);
 }
 
 void SerialReaderTask::doTask(Task *task, byte trigger, unsigned long time) {
@@ -25,10 +25,13 @@ SerialReleaseTask ReleaseTask = SerialReleaseTask();
 
 void SerialResponseTask::start(byte id, int aValue) {
   value = aValue;
+  TM.addTask(id, SerialOutSemaphore.trigger(), this);
 }
 
 void SerialResponseTask::start(Task *actionTask, int aValue) {
   value = aValue;
+  actionTask->trigger = SerialOutSemaphore.trigger();
+  actionTask->handler = this;
 }
 
 void SerialResponseTask::doTask(Task *task, byte trigger, unsigned long time) {
@@ -91,6 +94,10 @@ void SerialTrigger::init(byte tag) {
 
 byte SerialTrigger::trigger() {
   return resourceTag;
+}
+
+boolean SerialTrigger::isOn() {
+  return false;
 }
 
 byte SerialTrigger::setTrigger(byte event) {

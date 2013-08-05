@@ -44,6 +44,13 @@ void TimerTask::start(byte id, byte aHandle, unsigned long invocationDelay) {
   TM.addTask(id, TIME_TRIGGER, invocationDelay, this);
 }
 
+void TimerTask::start(Task *task, byte aHandle, unsigned long invocationDelay) {
+  handle = aHandle;
+  task->trigger = TIME_TRIGGER;
+  task->time = millis()+invocationDelay;
+  task->handler = this;
+}
+
 void TimerTask::doTask(Task *task, byte trigger, unsigned long time) {
   task->trigger = 0;
   callback(task, handle);

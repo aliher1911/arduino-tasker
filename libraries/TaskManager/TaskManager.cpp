@@ -70,8 +70,12 @@ void TaskManager::writeDebugReportSync() {
       Serial.println("----");
     }
   }
-  Serial.print("Event ");
-  Serial.println(getEvents(), HEX);
+  Serial.println("Triggers ");
+  for(i=0;i<MAX_TRIGGERS && triggers[i];i++) {
+    Serial.print(triggers[i]->trigger());
+    Serial.print(':');
+    Serial.println(triggers[i]->isOn());
+  }
 }
 
 void TaskManager::registerTrigger(Trigger *trigger) {
