@@ -1,0 +1,46 @@
+#######################################
+# Syntax Coloring Map For Wire
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+beginTransmission	KEYWORD2
+endTransmission	KEYWORD2
+requestFrom	KEYWORD2
+send	KEYWORD2
+receive	KEYWORD2
+
+init	KEYWORD2
+begin	KEYWORD2
+addSend	KEYWORD2
+addSend	KEYWORD2
+addReceive	KEYWORD2
+addReceive	KEYWORD2
+doAsync	KEYWORD2
+
+send	KEYWORD2
+read	KEYWORD2
+
+isReady	KEYWORD2
+getStatus	KEYWORD2
+
+getNextByte	KEYWORD2
+available	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+Wire	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
