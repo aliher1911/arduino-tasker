@@ -17,6 +17,8 @@ class PeriodicTask : public TaskHandler {
     void init(void (*callback)(Task* task, byte handle, unsigned short value, boolean last));
     void start(byte id, byte handle, unsigned short startVal, unsigned short endVal, 
                short increment, unsigned long timeStep);
+    void start(Task *task, byte handle, unsigned short startVal, unsigned short endVal, 
+               short increment, unsigned long timeStep);
     virtual void doTask(Task *task, byte trigger, unsigned long time);
 };
 

@@ -10,7 +10,7 @@ class SerialTrigger : public Trigger {
   public:
     // init trigger and set serial tag
     void init(byte tag);
-    // get trigger status
+    // get trigger status for logging purposes, code should not rely on this value
     virtual boolean isOn();
     // get trigger associated with this resource
     virtual byte trigger();

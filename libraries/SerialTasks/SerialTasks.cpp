@@ -36,7 +36,7 @@ void SerialResponseTask::start(Task *actionTask, int aValue) {
 
 void SerialResponseTask::doTask(Task *task, byte trigger, unsigned long time) {
   SerialOutSemaphore.aquire();
-  Serial.print("k ");
+  Serial.print("t ");
   Serial.print(task->id);
   Serial.print(' ');
   Serial.println(value);
@@ -69,6 +69,7 @@ void PacketSendTask::doTask(Task *task, byte trigger, unsigned long time) {
     // begin packet
     SerialOutSemaphore.aquire();
     task->trigger = TIME_TRIGGER;
+    task->time = millis();
     Serial.print("t ");
     Serial.print(task->id);
   }

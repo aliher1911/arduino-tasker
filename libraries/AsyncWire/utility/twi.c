@@ -17,6 +17,7 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
   Modified 2012 by Todd Krein (todd@krein.org) to implement repeated starts
+  Modified 2013 by Oleg Afanasiev (oafanasiev@gmail.com) to implement async operations
 */
 
 #include <math.h>
@@ -52,6 +53,8 @@ static volatile uint8_t twi_masterRecvBufferLength;
 static volatile uint8_t twi_error;              // error returned by last op
 
 static volatile uint8_t twi_asyncStatus;        // async operation status
+
+static volatile uint8_t twi_event;              // last interrupt event received
 
 /* 
  * Function twi_init
@@ -144,14 +147,14 @@ void twi_releaseBus(void)
 
 // schedule data for sending
 // result 0 - send/receive scheduled
-// result 1 - not ready to send
+// result 5 - not ready to send
 uint8_t twi_asyncWriteRead(uint8_t address, 
                            uint8_t* sendData, uint8_t sendLength,
                            uint8_t* recvData, uint8_t recvLength,
                            uint8_t sendStop)
 {
   if (TWI_COMPLETE != twi_asyncStatus) {
-    return 2;
+    return TWI_ASYNC_BUSY;
   }
 
   twi_state = TWI_MTX;
@@ -164,7 +167,7 @@ uint8_t twi_asyncWriteRead(uint8_t address,
   twi_masterBufferIndex = 0;
   twi_masterSendBufferLength = sendLength;
   twi_masterRecvBuffer = recvData;
-  twi_masterRecvBufferLength = recvLength;
+  twi_masterRecvBufferLength = recvLength - 1; // see comments in twi_asyncReadFrom
   
   // build sla+w, slave device address + w bit
   twi_slarw = TW_WRITE;
@@ -192,7 +195,7 @@ uint8_t twi_asyncWriteRead(uint8_t address,
     TWCR = _BV(TWINT) | _BV(TWEA) | _BV(TWEN) | _BV(TWIE) | _BV(TWSTA);	// enable INTs
 
   // now we are sending data asynchronously. let interrupt handler do the work
-  return 0;
+  return TWI_ASYNC_SCHEDULED;
 }
 
 // schedule data for sending
@@ -201,7 +204,7 @@ uint8_t twi_asyncWriteRead(uint8_t address,
 uint8_t twi_asyncWriteTo(uint8_t address, uint8_t* data, uint8_t length, uint8_t sendStop)
 {
   if (TWI_COMPLETE != twi_asyncStatus) {
-    return 2;
+    return TWI_ASYNC_BUSY;
   }
 
   twi_state = TWI_MTX;
@@ -241,7 +244,7 @@ uint8_t twi_asyncWriteTo(uint8_t address, uint8_t* data, uint8_t length, uint8_t
     TWCR = _BV(TWINT) | _BV(TWEA) | _BV(TWEN) | _BV(TWIE) | _BV(TWSTA);	// enable INTs
 
   // now we are sending data asynchronously. let interrupt handler do the work
-  return 0;
+  return TWI_ASYNC_SCHEDULED;
 }
 
 // request data from device
@@ -249,11 +252,9 @@ uint8_t twi_asyncWriteTo(uint8_t address, uint8_t* data, uint8_t length, uint8_t
 // result 2 - not ready to receive
 uint8_t twi_asyncReadFrom(uint8_t address, uint8_t* data, uint8_t length, uint8_t sendStop)
 {
-  uint8_t i;
-
   // wait until twi is ready, become master receiver
   if (TWI_COMPLETE != twi_asyncStatus) {
-    return 2;
+    return TWI_ASYNC_BUSY;
   }
   
   twi_state = TWI_MRX;
@@ -295,44 +296,49 @@ uint8_t twi_asyncReadFrom(uint8_t address, uint8_t* data, uint8_t length, uint8_
     TWCR = _BV(TWEN) | _BV(TWIE) | _BV(TWEA) | _BV(TWINT) | _BV(TWSTA);
 
   // scheduled. status could be checked for completion
-  return 0;
+  return TWI_ASYNC_SCHEDULED;
 }
 
-// last operation status could be write complete or read complete
-// 0 - operation still in progress
-// still in progress
-// 1 - operation succeeded
-// operation finished with error:
-// 2 - address send, NACK received
-// 3 - data send, NACK received
-// 4 - other twi error (lost bus arbitration, bus error, ..)
 uint8_t twi_lastAsyncOpStatus(void)
 {
   switch(twi_asyncStatus) {
     case TWI_PENDING:
       // operation still in progress
-      return 0;
+      return TWI_ASYNC_INPROGRESS;
     case TWI_AWAIT_STOP:
       // if stop is not sent return pending
-      if (TWCR & _BV(TWSTO)) return 0;
+      if (TWCR & _BV(TWSTO)) return TWI_ASYNC_INPROGRESS;
       twi_asyncStatus = TWI_COMPLETE;
       // set sync status to ready
       twi_state = TWI_READY;
     case TWI_COMPLETE:
-      // check error code
       if (twi_error == 0xFF)
-        return 1;   // success
+        return TWI_ASYNC_SUCCESS;
       else if (twi_error == TW_MT_SLA_NACK)
-        return 2;   // error: address send, nack received
+        return TWI_ASYNC_ADDR_NACK;
       else if (twi_error == TW_MT_DATA_NACK)
-        return 3;   // error: data send, nack received
+        return TWI_ASYNC_DATA_NACK;
       else
-        return 4;   // other twi error
+        return TWI_ASYNC_BUS_ERROR;
   }
+}
+
+uint8_t twi_status(void) {
+  return twi_state;
+}
+
+uint8_t twi_lastEvent(void) {
+  return twi_event;
+}
+
+uint8_t twi_lastAddr(void) {
+  return twi_slarw;
 }
 
 SIGNAL(TWI_vect)
 {
+  twi_event = TW_STATUS;
+  
   switch(TW_STATUS){
     // All Master
     case TW_START:     // sent start condition
@@ -366,10 +372,12 @@ SIGNAL(TWI_vect)
         } else {
           // start receiver
           twi_masterBufferIndex = 0;
+          twi_state = TWI_MRX;
+          // prepare address (old address + read bit)
           twi_slarw &= 0xFE;
-          twi_slarw != TW_READ;
-          TWDR = twi_slarw;
-          TWCR = _BV(TWINT) | _BV(TWEA) | _BV(TWEN) | _BV(TWIE);	// enable INTs, but not START
+          twi_slarw |= TW_READ;
+          // send repeated start to initiate read
+          TWCR = _BV(TWINT) | _BV(TWEA) | _BV(TWEN) | _BV(TWIE)  | _BV(TWSTA);
         }
       }
       break;
@@ -392,9 +400,9 @@ SIGNAL(TWI_vect)
       twi_masterRecvBuffer[twi_masterBufferIndex++] = TWDR;
     case TW_MR_SLA_ACK:  // address sent, ack received
       // ack if more bytes are expected, otherwise nack
-      if(twi_masterBufferIndex < twi_masterRecvBufferLength){
+      if(twi_masterBufferIndex < twi_masterRecvBufferLength) {
         twi_reply(1);
-      }else{
+      } else {
         twi_reply(0);
       }
       break;
@@ -404,7 +412,7 @@ SIGNAL(TWI_vect)
       if (twi_sendStop)
           twi_stop();
       else {
-	    twi_inRepStart = true;	// we're gonna send the START
+	      twi_inRepStart = true;	// we're gonna send the START
         // don't enable the interrupt. We'll generate the start, but we 
         // avoid handling the interrupt until we're in the next transaction,
         // at the point where we would normally issue the start.

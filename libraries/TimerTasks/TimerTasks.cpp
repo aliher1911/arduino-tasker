@@ -10,8 +10,20 @@ void PeriodicTask::start(byte id, byte aHandle, unsigned short startVal,
   currentVal = startVal;
   endVal = anEndVal;
   incrementStep = increment;
-  timeStep = timeStep;
+  timeStep = aTimeStep;
   TM.addTask(id, TIME_TRIGGER, 0, this);
+}
+
+void PeriodicTask::start(Task *task, byte aHandle, unsigned short startVal,
+                         unsigned short anEndVal, short increment, unsigned long aTimeStep) {
+  handle = aHandle;
+  currentVal = startVal;
+  endVal = anEndVal;
+  incrementStep = increment;
+  timeStep = aTimeStep;
+  task->trigger = TIME_TRIGGER;
+  task->time = millis();
+  task->handler = this;
 }
 
 void PeriodicTask::doTask(Task *task, byte trigger, unsigned long time) {

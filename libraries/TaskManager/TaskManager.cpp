@@ -72,7 +72,7 @@ void TaskManager::writeDebugReportSync() {
   }
   Serial.println("Triggers ");
   for(i=0;i<MAX_TRIGGERS && triggers[i];i++) {
-    Serial.print(triggers[i]->trigger());
+    Serial.print(triggers[i]->trigger(), HEX);
     Serial.print(':');
     Serial.println(triggers[i]->isOn());
   }
